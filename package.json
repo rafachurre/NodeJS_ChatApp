@@ -2,10 +2,10 @@
   "name": "nodejs_chatapp",
   "version": "1.0.0",
   "description": "chat app using nodeJS",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "test",
-    "start": "node index.js"
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,11 @@
   },
   "homepage": "https://github.com/rafachurre/NodeJS_ChatApp#readme",
   "dependencies": {
+    "browserify": "^16.1.0",
     "express": "^4.16.2",
-    "mongoose": "^5.0.5"
+    "mongoose": "^5.0.5",
+    "pug": "^2.0.0-rc.4",
+    "recastai": "^3.7.0",
+    "socket.io": "^2.0.4"
   }
 }

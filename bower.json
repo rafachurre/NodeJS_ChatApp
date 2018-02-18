@@ -1,0 +1,27 @@
+{
+  "name": "nodejs_chatapp",
+  "description": "chat app using nodeJS",
+  "main": "app.js",
+  "authors": [
+    "Rafael Lopez"
+  ],
+  "license": "ISC",
+  "keywords": [
+    "chat",
+    "nodejs"
+  ],
+  "homepage": "https://github.com/rafachurre/NodeJS_ChatApp",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "static/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "^4.0.0",
+    "jquery": "^3.3.1",
+    "socket.io-client": "^2.0.4"
+  }
+}

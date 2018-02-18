@@ -1,0 +1,28 @@
+doctype html
+html
+  head
+    title #{title}
+    link(rel='stylesheet' href='/bower_components/bootstrap/dist/css/bootstrap.min.css')
+    link(rel='stylesheet' href='/css/sticky-footer-navbar.css')
+    link(rel='stylesheet' href='/css/main-wrapper.css')
+  body
+    nav.navbar.navbar-dark.bg-dark.navbar-fixed-top
+      .container
+        .navbar-header
+          a(href='#').navbar-brand #{title}
+
+    main(role='main').container
+      .main-wrapper.col-md-11.pull-right
+        #chatArea.main
+            
+    footer.footer
+      .container
+        .input-group.mb-3
+          input(type='text' placeholder='Write your message').form-control.chat-new-input
+          .input-group-append
+            button(type='button').btn.btn-outline-primary Send
+
+    script(src='/bower_components/jquery/dist/jquery.min.js')
+    script(src='/bower_components/bootstrap/dist/js/bootstrap.min.js')
+    script(src='/bower_components/socket.io-client/dist/socket.io.js')
+    script(src='/js/chatMessages.js')
