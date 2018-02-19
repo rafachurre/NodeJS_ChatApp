@@ -46,3 +46,17 @@ Otherwise run:
 ```
   > node app.js
 ```
+
+# Node Modules 
+The app uses the following NPM packages:
+* Express [link](https://www.npmjs.com/package/express)
+* Mongoose [link](https://www.npmjs.com/package/mongoose)
+* Pug [link](https://www.npmjs.com/package/pug)
+* RecastAI [link](https://www.npmjs.com/package/recastai)
+* Socket.io [link](https://www.npmjs.com/package/socketio)
+
+# Bower Modules 
+The app uses the following Bower packages:
+* Bootstrap [link](https://github.com/twbs/bootstrap)
+* JQuery [link](https://github.com/jquery/jquery)
+* Socket.io-client [link](https://github.com/socketio/socket.io-client)
