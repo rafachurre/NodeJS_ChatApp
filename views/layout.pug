@@ -6,23 +6,48 @@ html
     link(rel='stylesheet' href='/css/sticky-footer-navbar.css')
     link(rel='stylesheet' href='/css/main-wrapper.css')
   body
-    nav.navbar.navbar-dark.bg-dark.navbar-fixed-top
+    .container#chatScreen
+      .jumbotron
+        h1.display-4 Welcome to the ChatBot Test App!!
+        p.lead Register a new Bot providing the Bot Token and an alias OR select a previously register Bot
       .container
-        .navbar-header
-          a(href='#').navbar-brand #{title}
+        h3.display-6 New Bot
+        form
+          .form-group.row
+            label(for='botTokenInput').col-sm-2.col-form-label Email
+            .col-sm-10
+              input(type='text' placeholder='Bot Token').form-control.plaintext#botTokenInput
+          .form-group.row
+            label(for='botAlias').col-sm-2.col-form-label Alias
+            .col-sm-10
+              input(type='text' placeholder='Bot Alias').form-control.plaintext#botTokenInput
 
-    main(role='main').container
-      .main-wrapper.col-md-11.pull-right
-        #chatArea.main
-            
-    footer.footer
-      .container
-        .input-group.mb-3
-          input(type='text' placeholder='Write your message').form-control.chat-new-input
-          .input-group-append
-            button(type='button').btn.btn-outline-primary Send
 
-    script(src='/bower_components/jquery/dist/jquery.min.js')
-    script(src='/bower_components/bootstrap/dist/js/bootstrap.min.js')
-    script(src='/bower_components/socket.io-client/dist/socket.io.js')
-    script(src='/js/chatMessages.js')
+
+        .card
+          .card-header New Bot
+          .card-body
+            .form-group.mb-3.align-middle
+              input(type='text' placeholder='Here the Bot Token')#botTokenInput.form-control
+
+    div(style='display: none')#chatScreen
+      nav.navbar.navbar-dark.bg-dark.navbar-fixed-top
+        .container
+          .navbar-header
+            a(href='#').navbar-brand #{title}
+
+      main(role='main').container
+        .main-wrapper.col-md-11.pull-right
+          #chatArea.main
+              
+      footer.footer
+        .container
+          .input-group.mb-3
+            input(type='text' placeholder='Write your message').form-control.chat-new-input
+            .input-group-append
+              button(type='button').btn.btn-outline-primary Send
+
+      script(src='/bower_components/jquery/dist/jquery.min.js')
+      script(src='/bower_components/bootstrap/dist/js/bootstrap.min.js')
+      script(src='/bower_components/socket.io-client/dist/socket.io.js')
+      script(src='/js/chatMessages.js')
