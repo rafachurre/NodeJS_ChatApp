@@ -1,4 +1,7 @@
 # NodeJS_ChatApp
+Chat application with Recast.ai bot engine. It runs on NodeJS + Express + MongoDB, using Socket.io to manage WebSockets communication.
+
+The UI uses Bootstrap framework.
 
 ### Software needed
 **NodeJS**: We need NodeJS to run this app. Install it following the documentation in: [NodeJS website](https://nodejs.org/es/)<br>
