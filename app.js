@@ -4,7 +4,6 @@ const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const dateFormatter = require('./formatters/dateFormatter');
 const socketIo = require('socket.io');
 const recastai = require('recastai').default;
 

@@ -63,6 +63,6 @@ function renderMessages(messages){
     //Scroll to the bottom
     setTimeout(function(){
         window.scrollTo(0,document.body.scrollHeight);
-    }, 100);
+    }, 300);
     
 }
