@@ -9,6 +9,7 @@ const recastai = require('recastai').default;
 
 // Require models
 let Message = require('./models/message');
+let Bot = require('./models/bot');
 
 
 /*******************
@@ -32,9 +33,14 @@ db.on('error', (error) => {
 /********************
  * Recast.AI Config *
  ********************/
-var recastClient = new recastai('7342ac85a271995d596f6d21acfa0b88');
-var recastConnect = recastClient.connect;
-var recastBuild = recastClient.build;
+function setRecastBot(botToken){
+    //let recastClient = new recastai('7342ac85a271995d596f6d21acfa0b88');
+    let recastClient = new recastai(botToken);
+    //let recastConnect = recastClient.connect;
+    //let recastBuild = recastClient.build;
+
+    return recastClient;
+};
 
 
 /******************
@@ -90,6 +96,7 @@ let connections = [];
 
 // on new connection
 io.sockets.on('connection', (socket) => {
+    let recastBot;
     let conversationId = 0;
     connections.push(socket);
     console.log('Connected: %s sockets connected', connections.length);
@@ -100,9 +107,30 @@ io.sockets.on('connection', (socket) => {
         console.log('Disconnected: %s sockets connected', connections.length);
     });
 
+    // catch 'getBots' event
+    socket.on('getBots', () => {
+        sendBotsToClient();
+    });
+
+    // catch 'botSelected' event
+    socket.on('botSelected', (botToken) => {
+        recastBot = setRecastBot(botToken);
+        sendMessagesToClient();
+    });
+    
     // catch 'getMessages' event
     socket.on('getMessages', () => {
         sendMessagesToClient();
+    });
+
+    // catch 'addBot' event sent from client
+    socket.on('addBot', (data) => {
+        let newBot = new Bot();
+        newBot.createdOn = data.createdOn;
+        newBot.alias = data.alias;
+        newBot.token = data.token;
+
+        addNewBot(newBot);        
     });
 
     // catch 'addMessage' event sent from client
@@ -115,7 +143,7 @@ io.sockets.on('connection', (socket) => {
 
         let d = new Date();
         conversationId = d.getTime();
-        recastBuild.dialog({type: 'text', content: newMessage.messageContent}, { conversationId: conversationId.toString() })
+        recastBot.build.dialog({type: 'text', content: newMessage.messageContent}, { conversationId: conversationId.toString() })
         .then(res => {
             for(let i = 0; i < res.messages.length; i++ ){
                 let newBotMessage = new Message();
@@ -132,6 +160,22 @@ io.sockets.on('connection', (socket) => {
         addNewMessages(newMessage);
     });
 
+    /*****************
+     * DB Management *
+     *****************/
+
+    // update messages in all sockets
+    function addNewBot(newBot){
+        newBot.save((err) => {
+            if(err){
+                console.log(err);
+            }
+            else {
+                sendBotsToClient();
+            }
+        });        
+    };
+
     // update messages in all sockets
     function addNewMessages(newMessage){
         newMessage.save((err) => {
@@ -144,7 +188,19 @@ io.sockets.on('connection', (socket) => {
         });        
     };
 
-    // Get list of messages from DB and send them to all sockets firing the messagesList event
+    // Get list of bots from DB and send them to the client
+    function sendBotsToClient(){
+        Bot.find({}, (err, allBots) => {
+            if(err){
+                console.log(err);
+            }
+            else {
+                io.sockets.emit('botsList', allBots);
+            }
+        });
+    };
+
+    // Get list of messages from DB and send them to the client
     function sendMessagesToClient(){
         Message.find({}, (err, allMessages) => {
             if(err){
@@ -155,8 +211,4 @@ io.sockets.on('connection', (socket) => {
             }
         });
     };
-
-    /****************************
-    * on recast message handler *
-    *****************************/
 });

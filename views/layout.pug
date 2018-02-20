@@ -6,21 +6,26 @@ html
     link(rel='stylesheet' href='/css/sticky-footer-navbar.css')
     link(rel='stylesheet' href='/css/main-wrapper.css')
   body
-    .container#chatScreen
+    .container(style='display:none')#welcomeScreen
       .jumbotron
         h1.display-4.text-center Welcome to the ChatBot Test App!!
         p.lead.text-center Register a new Bot providing the Bot Token and an alias OR select a previously registered one
         .container.mt-5
           h3.display-6.mt-4.mb-4 New Bot
-          form
+          form(action='#' novalidate)#new-bot-form
             .form-group.row
               label(for='botTokenInput').col-sm-2.col-form-label Token
               .col-sm-10
-                input(type='text' placeholder='I am a Token').form-control.plaintext#botTokenInput
+                input(type='text' name='token' placeholder='I am a Token' required).form-control.plaintext#botTokenInput
+                .invalid-feedback Please, provide a Bot Token
             .form-group.row
               label(for='botAlias').col-sm-2.col-form-label Alias
               .col-sm-10
-                input(type='text' placeholder='Bot McDermott').form-control.plaintext#botTokenInput
+                input(type='text' name='alias' placeholder='Bot McDermott' required).form-control.plaintext#botAliasInput
+                .invalid-feedback Please, provide an alias for the bot
+            .form-group.row
+              .col-sm-12
+                button.btn.btn-primary.btn-lg.float-right#createBotBtn Create
       
       .container.mt-4
         h3.display-6.pt-4.mb-4 Registered Bots
@@ -29,20 +34,19 @@ html
             tr
               th(scope='col') Alias
               th(scope='col') Token
-          tbody
-            tr
-              td aaaa
-              td aaaaaaaaaa
+              th(scope='col') Created On
+          tbody#bots-table-body
 
-    div(style='display: none')#chatScreen
+    div(style='display:none')#chatScreen
       nav.navbar.navbar-dark.bg-dark.navbar-fixed-top
+        btn.btn.btn-light#backButton Back
         .container
           .navbar-header
             a(href='#').navbar-brand #{title}
 
       main(role='main').container
-        .main-wrapper.col-md-11.pull-right
-          #chatArea.main
+        .main-wrapper.col-md-11.mt-5
+          .main#chatArea
               
       footer.footer
         .container
