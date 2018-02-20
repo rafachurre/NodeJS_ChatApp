@@ -42,3 +42,14 @@ body > .navbar-fixed-top {
 code {
   font-size: 80%;
 }
+
+
+
+/* Sticky navbar */
+
+.nabvar-fixed-top {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1030;
+}

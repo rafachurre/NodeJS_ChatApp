@@ -69,8 +69,8 @@ function onCreateBotBtnPressed(evt){
         onChatInit(token);
 
         //reset inputs
-        $('#botTokenInput').val();
-        $('#botAliasInput').val();
+        $('#botTokenInput').val('');
+        $('#botAliasInput').val('');
     }
     else {
         $('#new-bot-form').addClass('was-validated')
@@ -79,7 +79,14 @@ function onCreateBotBtnPressed(evt){
 
 // handler for table row 'click' event
 function onBotsTableRowSelected(evt){
-    we are here !!!
+    let rowCells = $(evt.target).parent().children('td');
+    let selectedBotToken = rowCells[1].innerText;
+    
+    debugger;
+    navToChatScreen();
+    onChatInit(selectedBotToken);
+
+    
 }
 
 /*******************

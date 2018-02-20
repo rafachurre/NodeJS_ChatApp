@@ -6,6 +6,10 @@ let messageSchema = mongoose.Schema({
         type: Date,
         required: true
     },
+    conversationId: {
+        type: Number,
+        required: true
+    },
     author: {
         type: String,
         required: true

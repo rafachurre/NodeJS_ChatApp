@@ -10,6 +10,7 @@ const recastai = require('recastai').default;
 // Require models
 let Message = require('./models/message');
 let Bot = require('./models/bot');
+let Conversation = require('./models/conversation');
 
 
 /*******************
@@ -129,8 +130,12 @@ io.sockets.on('connection', (socket) => {
         newBot.createdOn = data.createdOn;
         newBot.alias = data.alias;
         newBot.token = data.token;
-
-        addNewBot(newBot);        
+        
+        let existingBot = checkIfBotExists(newBot, (newBot) => {
+            // Add new bot to DB only if there is not other bot with this token
+            addNewBot(newBot);
+        });
+        
     });
 
     // catch 'addMessage' event sent from client
@@ -164,6 +169,23 @@ io.sockets.on('connection', (socket) => {
      * DB Management *
      *****************/
 
+    // update messages in all sockets
+    function checkIfBotExists(newBot, callback){
+        Bot.find({token: newBot.botToken}, (err, bots) => {
+            if(err){
+                console.log(err);
+            }
+            else {
+                if(bots && bots.length > 1){
+                    console.log('Bad data!! More than one bot with the same ID in the DB');
+                }
+                else if(bots && bots.length === 0){
+                    callback(newBot);
+                }
+            }
+        });   
+    };
+    
     // update messages in all sockets
     function addNewBot(newBot){
         newBot.save((err) => {
