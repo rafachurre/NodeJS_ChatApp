@@ -44,11 +44,25 @@ html
           .navbar-header
             a(href='#').navbar-brand #{title}
 
-      main(role='main').container
-        .sidebar.col-md-10
-          p asdasd
-        .main-wrapper.col-md-11.mt-5.pt-5
-          .main#chatArea
+      main(role='main').mt-5.pt-5
+        .row
+          .col-3.pr-2.pl-4
+            .h3.text-center Conversations
+            .list-group
+              a(href="#").list-group-item.list-group-item-action.flex-column.align-items-start.mb-2
+                .d-flex.w-100.justify-content-between
+                  h5.mb-1 aaaa
+                  small asdasd
+                p.mb-1 asdasdasdasd
+                
+              a(href="#").list-group-item.list-group-item-action.flex-column.align-items-start
+                .d-flex.w-100.justify-content-between
+                  h5.mb-1 aaaa
+                  small asdasd
+                p.mb-1 asdasdasdasd
+          .col-9
+            .main-wrapper.col-md-11
+              .main#chatArea
               
       footer.footer
         .container

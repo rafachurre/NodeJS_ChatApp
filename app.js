@@ -97,8 +97,10 @@ let connections = [];
 
 // on new connection
 io.sockets.on('connection', (socket) => {
+    let botToken;
     let recastBot;
-    let conversationId = 0;
+    let conversationId;
+
     connections.push(socket);
     console.log('Connected: %s sockets connected', connections.length);
 
@@ -114,14 +116,10 @@ io.sockets.on('connection', (socket) => {
     });
 
     // catch 'botSelected' event
-    socket.on('botSelected', (botToken) => {
+    socket.on('botSelected', (token) => {
+        botToken = token;
         recastBot = setRecastBot(botToken);
-        sendMessagesToClient();
-    });
-    
-    // catch 'getMessages' event
-    socket.on('getMessages', () => {
-        sendMessagesToClient();
+        sendMessagesToClient(conversationId);
     });
 
     // catch 'addBot' event sent from client
@@ -131,6 +129,7 @@ io.sockets.on('connection', (socket) => {
         newBot.alias = data.alias;
         newBot.token = data.token;
         
+        botToken = newBot.token;
         let existingBot = checkIfBotExists(newBot, (newBot) => {
             // Add new bot to DB only if there is not other bot with this token
             addNewBot(newBot);
@@ -138,16 +137,35 @@ io.sockets.on('connection', (socket) => {
         
     });
 
+    // catch 'getConversations' event
+    socket.on('getConversations', () => {
+        sendConversationsToClient();
+    });
+
+    // catch 'conversationSelected' event
+    socket.on('conversationSelected', (conversationId) => {
+        conversationId = conversationId;
+    });
+    
+    // catch 'getMessages' event
+    socket.on('getMessages', () => {
+        sendMessagesToClient(conversationId);
+    });
+
     // catch 'addMessage' event sent from client
     socket.on('addMessage', (data) => {
+        if(!conversationId){
+            conversationId = generateConversationId();
+            addNewConversation(conversationId, botToken);
+        };
+
         let newMessage = new Message();
         newMessage.timestamp = data.timestamp;
         newMessage.author = data.author;
         newMessage.type = data.type;
         newMessage.messageContent = data.messageContent;
+        newMessage.conversationId = conversationId;
 
-        let d = new Date();
-        conversationId = d.getTime();
         recastBot.build.dialog({type: 'text', content: newMessage.messageContent}, { conversationId: conversationId.toString() })
         .then(res => {
             for(let i = 0; i < res.messages.length; i++ ){
@@ -156,6 +174,7 @@ io.sockets.on('connection', (socket) => {
                 newBotMessage.author = 'Bot';
                 newBotMessage.type = res.messages[i].type;
                 newBotMessage.messageContent = res.messages[i].content;
+                newBotMessage.conversationId = conversationId;
 
                 addNewMessages(newBotMessage);
             }
@@ -186,7 +205,7 @@ io.sockets.on('connection', (socket) => {
         });   
     };
     
-    // update messages in all sockets
+    // update messages in all socket
     function addNewBot(newBot){
         newBot.save((err) => {
             if(err){
@@ -198,6 +217,15 @@ io.sockets.on('connection', (socket) => {
         });        
     };
 
+    // Add new conversation ID to DB and notify the socket
+    function addNewConversation(conversationId, botToken){
+        var newConversation = new Conversation();
+        newConversation.createdOn = new Date();
+        newConversation.conversationId = conversationId;
+        newConversation.botToken = botToken;
+        newConversation.save();
+    };
+
     // update messages in all sockets
     function addNewMessages(newMessage){
         newMessage.save((err) => {
@@ -205,7 +233,7 @@ io.sockets.on('connection', (socket) => {
                 console.log(err);
             }
             else {
-                sendMessagesToClient();
+                sendMessagesToClient(newMessage.conversationId);
             }
         });        
     };
@@ -223,8 +251,8 @@ io.sockets.on('connection', (socket) => {
     };
 
     // Get list of messages from DB and send them to the client
-    function sendMessagesToClient(){
-        Message.find({}, (err, allMessages) => {
+    function sendMessagesToClient(conversationId){
+        Message.find({conversationId: conversationId}, (err, allMessages) => {
             if(err){
                 console.log(err);
             }
@@ -234,3 +262,12 @@ io.sockets.on('connection', (socket) => {
         });
     };
 });
+
+/*********
+ * Utils *
+ *********/
+
+function generateConversationId(){
+    let d = new Date();
+    return d.getTime();
+}
