@@ -30,9 +30,14 @@ function onInit(){
 }
 
 function onChatInit(botToken){
-    // ask for the list of messages
+    // notify the server about the bot selected
     selectBot(botToken);
 
+    // catch 'messagesList' event sent from the server
+    this.socket.on('conversationsList', (conversations) => {
+        renderConversations(conversations);
+    });
+    
     // catch 'messagesList' event sent from the server
     this.socket.on('messagesList', (messages) => {
         renderMessages(messages);
@@ -58,7 +63,7 @@ function onChatInit(botToken){
  * Event Handlers *
  ******************/
 // handler for Create Bot 'click' event
-function onCreateBotBtnPressed(evt){
+function onCreateBotBtnPressed(){
     let token = $('#botTokenInput').val();
     let alias = $('#botAliasInput').val();
     if(token && alias){
@@ -75,18 +80,32 @@ function onCreateBotBtnPressed(evt){
     else {
         $('#new-bot-form').addClass('was-validated')
     }
-}
+};
 
 // handler for table row 'click' event
 function onBotsTableRowSelected(evt){
-    let rowCells = $(evt.target).parent().children('td');
+    let row = $(evt.target);
+    // Check if the target retrieved is one of the inner controls. If so, getParent until we reach the <tr>
+    while(!row.hasClass('botTableRow')){
+        row = row.parent()
+    }
+    let rowCells = row.children('td');
     let selectedBotToken = rowCells[1].innerText;
-    
-    debugger;
-    navToChatScreen();
-    onChatInit(selectedBotToken);
 
-    
+    navToChatScreen();
+    onChatInit(selectedBotToken);    
+};
+
+// handler for conversation 'click' event
+function onConversationSelected(evt){
+    debugger;
+    let selectedListItem = $(evt.target);
+    // Check if the target retrieved is one of the inner controls. If so, getParent until we reach the <a>
+    while(!selectedListItem.hasClass('conversation-list-item')){
+        selectedListItem = selectedListItem.parent();
+    }
+    let conversationId = selectedListItem.attr('data-conversationId');
+    getConversationMessages(conversationId);
 }
 
 /*******************
@@ -124,24 +143,29 @@ function getListOfBots(){
    this.socket.emit('getBots');
 }
 
+// Emits a new bot event, sending the new bot data to the backend
+function addBot(socket, newBot){
+    socket.emit('addBot', newBot);
+}
+
 // Emit botSelected event with the corresponding token
 function selectBot(botToken){
     socket.emit('botSelected', botToken)
 }
 
 // Emit a get messages event for a given Bot token
-function getBotMessages(){
-    socket.emit('getMessages');
-}
-
-// Emits a new bot event, sending the new bot data to the backend
-function addBot(socket, newBot){
-    socket.emit('addBot', newBot);
+function getConversationMessages(conversaionId){
+    socket.emit('getMessages', conversaionId);
 }
 
 // Emits a new message event, sending the new message data to the backend
 function addMessage(socket, newMessage){
     socket.emit('addMessage', newMessage);
+}
+
+// Emits a new message event, sending the new message data to the backend
+function sendCleanUp(socket){
+    socket.emit('cleanUp');
 }
 
 
@@ -178,7 +202,28 @@ function renderBotsTableRows(bots){
     $('.botTableRow').on('click', (evt) => {
         onBotsTableRowSelected(evt);
     });
-}
+};
+
+/**
+ * 
+ */
+function renderConversations(conversations){
+    let conversationsList = $('#conversationsList');
+    let html = '';
+    for(let i=0; i<conversations.length; i++){
+        html += '<a href="#" data-conversationId="' + conversations[i].conversationId + '" class="list-group-item list-group-item-action flex-column align-items-start mb-2 conversation-list-item">';
+        html += '<div class="d-flex w-100 justify-content-between">';
+        html += '<h5 class="mb-1">' + conversations[i].conversationId + '</h5>';
+        html += '</div>';
+        html += '<p class="mb-1">' + conversations[i].createdOn + '</p>'
+        html += '</a>'
+    }
+    conversationsList.html(html);
+
+    $('.conversation-list-item').on('click', (evt) => {
+        onConversationSelected(evt)
+    });
+};
 
 /**
  * Render conversation messages in the chat screen
@@ -222,7 +267,8 @@ function renderMessages(messages){
 function clenupChatScreen(){
     let chatArea = $('#chatArea');
     let messageInput = $('.chat-new-input');
-
     messageInput.val();
     chatArea.empty();
+
+    sendCleanUp(this.socket);
 };

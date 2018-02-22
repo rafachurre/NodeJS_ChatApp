@@ -106,10 +106,18 @@ io.sockets.on('connection', (socket) => {
 
     // if this socket gets disconnected
     socket.on('disconnect', (data) => {
-        connections.splice(connections.indexOf(socket), 1)
+        connections.splice(connections.indexOf(socket), 1);
         console.log('Disconnected: %s sockets connected', connections.length);
     });
 
+    socket.on('cleanUp', () => {
+        botToken = undefined;
+        recastBot = undefined;
+        conversationId = undefined;
+    });
+
+    /* Bots Collection *
+     *******************/
     // catch 'getBots' event
     socket.on('getBots', () => {
         sendBotsToClient();
@@ -119,6 +127,7 @@ io.sockets.on('connection', (socket) => {
     socket.on('botSelected', (token) => {
         botToken = token;
         recastBot = setRecastBot(botToken);
+        sendConversationsToClient(botToken);
         sendMessagesToClient(conversationId);
     });
 
@@ -137,18 +146,23 @@ io.sockets.on('connection', (socket) => {
         
     });
 
+    /* Conversations Collection *
+     ****************************/
     // catch 'getConversations' event
     socket.on('getConversations', () => {
-        sendConversationsToClient();
+        sendConversationsToClient(botToken);
     });
 
     // catch 'conversationSelected' event
     socket.on('conversationSelected', (conversationId) => {
         conversationId = conversationId;
+        sendMessagesToClient(conversationId);
     });
-    
+
+    /* Messages Collection *
+     ***********************/    
     // catch 'getMessages' event
-    socket.on('getMessages', () => {
+    socket.on('getMessages', (conversationId) => {
         sendMessagesToClient(conversationId);
     });
 
@@ -156,7 +170,12 @@ io.sockets.on('connection', (socket) => {
     socket.on('addMessage', (data) => {
         if(!conversationId){
             conversationId = generateConversationId();
-            addNewConversation(conversationId, botToken);
+            let newConversation = new Conversation();
+            newConversation.createdOn = new Date();
+            newConversation.conversationId = conversationId;
+            newConversation.botToken = botToken;
+
+            addNewConversation(newConversation);
         };
 
         let newMessage = new Message();
@@ -188,6 +207,8 @@ io.sockets.on('connection', (socket) => {
      * DB Management *
      *****************/
 
+    /* Bots Collection *
+     *******************/
     // update messages in all sockets
     function checkIfBotExists(newBot, callback){
         Bot.find({token: newBot.botToken}, (err, bots) => {
@@ -217,27 +238,6 @@ io.sockets.on('connection', (socket) => {
         });        
     };
 
-    // Add new conversation ID to DB and notify the socket
-    function addNewConversation(conversationId, botToken){
-        var newConversation = new Conversation();
-        newConversation.createdOn = new Date();
-        newConversation.conversationId = conversationId;
-        newConversation.botToken = botToken;
-        newConversation.save();
-    };
-
-    // update messages in all sockets
-    function addNewMessages(newMessage){
-        newMessage.save((err) => {
-            if(err){
-                console.log(err);
-            }
-            else {
-                sendMessagesToClient(newMessage.conversationId);
-            }
-        });        
-    };
-
     // Get list of bots from DB and send them to the client
     function sendBotsToClient(){
         Bot.find({}, (err, allBots) => {
@@ -250,14 +250,56 @@ io.sockets.on('connection', (socket) => {
         });
     };
 
-    // Get list of messages from DB and send them to the client
-    function sendMessagesToClient(conversationId){
-        Message.find({conversationId: conversationId}, (err, allMessages) => {
+    /* Conversations Collection *
+     ****************************/
+    // Add new conversation ID to DB and notify the socket
+    function addNewConversation(newConversation){
+        newConversation.save((err) => {
             if(err){
                 console.log(err);
             }
             else {
-                io.sockets.emit('messagesList', allMessages);
+                sendConversationsToClient(newConversation.botToken);
+            }
+        });        
+            
+        
+    };
+
+    function sendConversationsToClient(botToken){
+        Conversation.find({botToken: botToken}, (err, conversations) => {
+            if(err){
+                console.log(err);
+            }
+            else {
+                io.sockets.emit('conversationsList', conversations);
+            }
+        });
+    };
+    
+
+    /* Messages Collection *
+     ***********************/
+    // update messages in all sockets
+    function addNewMessages(newMessage){
+        newMessage.save((err) => {
+            if(err){
+                console.log(err);
+            }
+            else {
+                sendMessagesToClient(newMessage.conversationId);
+            }
+        });        
+    };
+
+    // Get list of messages from DB and send them to the client
+    function sendMessagesToClient(conversationId){
+        Message.find({conversationId: conversationId}, (err, messages) => {
+            if(err){
+                console.log(err);
+            }
+            else {
+                io.sockets.emit('messagesList', messages);
             }
         });
     };
