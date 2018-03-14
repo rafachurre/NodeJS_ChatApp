@@ -6,6 +6,10 @@ let botSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    type: {
+        type: String,
+        required: true
+    },
     alias: {
         type: String,
         required: true

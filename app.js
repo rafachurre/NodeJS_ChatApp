@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const socketIo = require('socket.io');
 const recastai = require('recastai').default;
+const {Wit, log} = require('node-wit');
 
 // Require models
 let Message = require('./models/message');
@@ -41,6 +42,18 @@ function setRecastBot(botToken){
     //let recastBuild = recastClient.build;
 
     return recastClient;
+};
+
+/********************
+ * Wit.AI Config *
+ ********************/
+function setWitaiBot(botToken){
+    let witaiClient = new Wit({
+        accessToken: botToken,
+        logger: new log.Logger(log.DEBUG) // optional
+      });
+
+    return witaiClient;
 };
 
 
@@ -98,7 +111,9 @@ let connections = [];
 // on new connection
 io.sockets.on('connection', (socket) => {
     let botToken;
+    let botType;
     let recastBot;
+    let witaiBot;
     let conversationId;
 
     connections.push(socket);
@@ -124,11 +139,19 @@ io.sockets.on('connection', (socket) => {
     });
 
     // catch 'botSelected' event
-    socket.on('botSelected', (token) => {
-        botToken = token;
-        recastBot = setRecastBot(botToken);
-        sendConversationsToClient(botToken);
-        sendMessagesToClient(conversationId);
+    socket.on('botSelected', (data) => {
+        botToken = data.botToken;
+        botType = data.botType;
+        if(botType === "recastai"){
+            recastBot = setRecastBot(botToken);
+            sendConversationsToClient(botToken);
+            sendMessagesToClient(conversationId);
+        }
+        else if(botType === "witai"){
+            witaiBot = setWitaiBot(botToken);
+            sendConversationsToClient(botToken);
+            sendMessagesToClient(conversationId);
+        }
     });
 
     // catch 'addBot' event sent from client
@@ -136,9 +159,11 @@ io.sockets.on('connection', (socket) => {
         let newBot = new Bot();
         newBot.createdOn = data.createdOn;
         newBot.alias = data.alias;
+        newBot.type = data.type;
         newBot.token = data.token;
         
         botToken = newBot.token;
+        botType = newBot.type;
         let existingBot = checkIfBotExists(newBot, (newBot) => {
             // Add new bot to DB only if there is not other bot with this token
             addNewBot(newBot);
@@ -168,6 +193,7 @@ io.sockets.on('connection', (socket) => {
 
     // catch 'addMessage' event sent from client
     socket.on('addMessage', (data) => {
+        // If there is no conversation selected, create a new one
         if(!conversationId){
             conversationId = generateConversationId();
             let newConversation = new Conversation();
@@ -185,22 +211,65 @@ io.sockets.on('connection', (socket) => {
         newMessage.messageContent = data.messageContent;
         newMessage.conversationId = conversationId;
 
-        recastBot.build.dialog({type: 'text', content: newMessage.messageContent}, { conversationId: conversationId.toString() })
-        .then(res => {
-            for(let i = 0; i < res.messages.length; i++ ){
+
+        if(botType === 'witai' && witaiBot){
+            witaiBot.message(newMessage.messageContent).then((res) => {
+                console.log('WitaiBot Response');
+                console.log(JSON.stringify(res, undefined, 2));
+
                 let newBotMessage = new Message();
                 newBotMessage.timestamp = new Date();
                 newBotMessage.author = 'Bot';
-                newBotMessage.type = res.messages[i].type;
-                newBotMessage.messageContent = res.messages[i].content;
+                newBotMessage.type = 'text';
+                newBotMessage.messageContent = JSON.stringify(res, undefined, 2);
                 newBotMessage.conversationId = conversationId;
-
+                
                 addNewMessages(newBotMessage);
-            }
-        })
-        .catch(err => console.error('Error stablishing bot conversation', err));
+            });
+            addNewMessages(newMessage);
+        }
 
-        addNewMessages(newMessage);
+        else if(botType === 'recastai' && recastBot){
+            // Bot intent analysis
+            recastBot.request.analyseText(newMessage.messageContent).then((res) => {
+                console.log('response:');
+                console.log(res);
+                console.log('intent:');
+                console.log(res.intent());
+                console.log('entities:');
+                console.log(res.entities);
+
+                let newBotMessage = new Message();
+                newBotMessage.timestamp = new Date();
+                newBotMessage.author = 'Bot';
+                newBotMessage.type = 'text';
+                newBotMessage.messageContent = JSON.stringify(res, undefined, 2);
+                newBotMessage.conversationId = conversationId;
+                
+                addNewMessages(newBotMessage);
+            });
+            addNewMessages(newMessage);
+
+            /*
+            // Bot dialog -> autogenerated responses
+            recastBot.build.dialog({type: 'text', content: newMessage.messageContent}, { conversationId: conversationId.toString() })
+            .then(res => {
+                for(let i = 0; i < res.messages.length; i++ ){
+                    let newBotMessage = new Message();
+                    newBotMessage.timestamp = new Date();
+                    newBotMessage.author = 'Bot';
+                    newBotMessage.type = res.messages[i].type;
+                    newBotMessage.messageContent = res.messages[i].content;
+                    newBotMessage.conversationId = conversationId;
+
+                    addNewMessages(newBotMessage);
+                }
+            })
+            .catch(err => console.error('Error stablishing bot conversation', err));
+
+            addNewMessages(newMessage);
+            */
+        }
     });
 
     /*****************
@@ -272,6 +341,7 @@ io.sockets.on('connection', (socket) => {
                 console.log(err);
             }
             else {
+                console.log(conversations)
                 io.sockets.emit('conversationsList', conversations);
             }
         });

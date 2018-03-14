@@ -27,11 +27,15 @@ function onInit(){
     $('#createBotBtn').on('click', (evt) => {
         onCreateBotBtnPressed();
     });
+
+    $("#botTypeInput > .btn").click(function(){
+        $(this).addClass("active").siblings().removeClass("active");
+    });
 }
 
-function onChatInit(botToken){
+function onChatInit(botType, botToken){
     // notify the server about the bot selected
-    selectBot(botToken);
+    selectBot(botType, botToken);
 
     // catch 'messagesList' event sent from the server
     this.socket.on('conversationsList', (conversations) => {
@@ -64,18 +68,20 @@ function onChatInit(botToken){
  ******************/
 // handler for Create Bot 'click' event
 function onCreateBotBtnPressed(){
-    let token = $('#botTokenInput').val();
-    let alias = $('#botAliasInput').val();
-    if(token && alias){
-        let newBot = createNewBotObject(token, alias);
+    let botToken = $('#botTokenInput').val();
+    let botType = $('#botTypeInput > .btn.active').val();
+    let botAlias = $('#botAliasInput').val();
+    if(botToken && botType && botAlias){
+        let newBot = createNewBotObject(botToken, botType, botAlias);
         addBot(this.socket, newBot);
         
         navToChatScreen();
-        onChatInit(token);
+        onChatInit(botType, botToken);
 
         //reset inputs
         $('#botTokenInput').val('');
         $('#botAliasInput').val('');
+        $("#botTypeInput > .btn").removeClass("active").siblings().removeClass("active");
     }
     else {
         $('#new-bot-form').addClass('was-validated')
@@ -90,10 +96,11 @@ function onBotsTableRowSelected(evt){
         row = row.parent()
     }
     let rowCells = row.children('td');
-    let selectedBotToken = rowCells[1].innerText;
+    let selectedBotType = rowCells[1].innerText;
+    let selectedBotToken = rowCells[2].innerText;
 
     navToChatScreen();
-    onChatInit(selectedBotToken);    
+    onChatInit(selectedBotType, selectedBotToken);    
 };
 
 // handler for conversation 'click' event
@@ -114,11 +121,12 @@ function onConversationSelected(evt){
 
 // Creates a new bot object following as described by the Message Model
 // It receives the alias and token input controls
-function createNewBotObject(tokenInput, aliasInput){
+function createNewBotObject(botToken, botType, botAlias){
     let newBot = {
         createdOn: new Date(),
-        alias: aliasInput,
-        token: tokenInput
+        token: botToken,
+        type: botType,
+        alias: botAlias,
     }
     return newBot;
 }
@@ -149,8 +157,11 @@ function addBot(socket, newBot){
 }
 
 // Emit botSelected event with the corresponding token
-function selectBot(botToken){
-    socket.emit('botSelected', botToken)
+function selectBot(botType, botToken){
+    socket.emit('botSelected', {
+        botType: botType, 
+        botToken: botToken
+    })
 }
 
 // Emit a get messages event for a given Bot token
@@ -195,7 +206,7 @@ function renderBotsTableRows(bots){
     let botsTableBody = $('#bots-table-body');
     let html = '';
     for(let i=0; i<bots.length; i++){
-        html += '<tr class="botTableRow"><td>' + bots[i].alias + '</td><td>' + bots[i].token + '</td><td>' + bots[i].createdOn + '</td></tr>';
+        html += '<tr class="botTableRow"><td>' + bots[i].alias + '</td><td>' + bots[i].type + '</td><td>' + bots[i].token + '</td><td>' + bots[i].createdOn + '</td></tr>';
     }
     botsTableBody.html(html);
 
@@ -246,7 +257,7 @@ function renderMessages(messages){
         html += '<div class="card-body"><blockquote class="blockquote mb-0">';
 
         if(messages[i].type === 'text'){
-            html += '<p>' + messages[i].messageContent + '</p><footer class="blockquote-footer">' + messages[i].timestamp + '</footer></blockquote></div></div>';
+            html += '<pre>' + messages[i].messageContent + '</pre><footer class="blockquote-footer">' + messages[i].timestamp + '</footer></blockquote></div></div>';
         }
         else if(messages[i].type === 'picture'){
             html += '<img src="' + messages[i].messageContent + '" class="img-thumbnail"><footer class="blockquote-footer">' + messages[i].timestamp + '</footer></blockquote></div></div>';

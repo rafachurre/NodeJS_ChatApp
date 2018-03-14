@@ -24,6 +24,12 @@ html
                 input(type='text' name='alias' placeholder='Bot McDermott' required).form-control.plaintext#botAliasInput
                 .invalid-feedback Please, provide an alias for the bot
             .form-group.row
+              label(for='botTypeInput').col-sm-2.col-form-label Bot Type
+              .col-sm-10
+                div(id="botTypeInput" role="group").btn-group
+                  button(type="button" value="witai").btn.btn-outline-secondary WitAI
+                  button(type="button" value="recastai").btn.btn-outline-secondary RecastAI
+            .form-group.row
               .col-sm-12
                 button.btn.btn-primary.btn-lg.float-right#createBotBtn Create
       
@@ -33,6 +39,7 @@ html
           thead
             tr
               th(scope='col') Alias
+              th(scope='col') Type
               th(scope='col') Token
               th(scope='col') Created On
           tbody#bots-table-body
@@ -49,17 +56,6 @@ html
           .col-3.pr-2.pl-4
             .h3.text-center Conversations
             .list-group#conversationsList
-              a(href='#' data-conversationId='aaaa').list-group-item.list-group-item-action.flex-column.align-items-start.mb-2.conversation-list-item
-                .d-flex.w-100.justify-content-between
-                  h5.mb-1 aaaa
-                  small asdasd
-                p.mb-1 asdasdasdasd
-                
-              a(href='#').list-group-item.list-group-item-action.flex-column.align-items-start.conversation-list-item
-                .d-flex.w-100.justify-content-between
-                  h5.mb-1 aaaa
-                  small asdasd
-                p.mb-1 asdasdasdasd
           .col-9
             .main-wrapper.col-md-11
               .main#chatArea
